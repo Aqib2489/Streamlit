@@ -3,3 +3,4 @@ pymupdf
 Pillow
 numpy
 opencv-python-headless
+PyPDF2
