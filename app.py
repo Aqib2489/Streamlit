@@ -3,6 +3,7 @@ import fitz  # PyMuPDF
 from PIL import Image, ImageDraw, ImageEnhance
 import numpy as np
 from io import BytesIO
+import os
 
 # Step 1: Extract pages as images
 def pdf_to_images(input_pdf_stream, zoom=2.0):
