@@ -67,7 +67,7 @@ def images_to_pdf(images):
     return pdf_buffer
 
 # Streamlit interface
-st.title("Batch PDF Redactor with File Upload")
+st.title("PDF Redactor and Pre-Processor")
 
 uploaded_files = st.file_uploader("Upload PDF files", type="pdf", accept_multiple_files=True)
 
