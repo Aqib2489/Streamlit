@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw, ImageEnhance
 import numpy as np
 from io import BytesIO
 import os
+from PyPDF2 import PdfMerger  # PyPDF2 is required for merging PDFs
 
 # Step 1: Extract pages as images
 def pdf_to_images(uploaded_pdf, zoom=2.0):
@@ -71,8 +72,12 @@ st.title("Batch PDF Redactor with File Upload")
 uploaded_files = st.file_uploader("Upload PDF files", type="pdf", accept_multiple_files=True)
 
 if st.button("Start Redaction") and uploaded_files:
+    merger = PdfMerger()  # Initialize PDF merger for combining all redacted PDFs
+    
     for uploaded_file in uploaded_files:
+        # Extract the first seven digits from the file name
         base_name = os.path.splitext(uploaded_file.name)[0]
+        first_seven_digits = base_name[:7] if len(base_name) >= 7 else base_name
         
         # Convert PDF to images
         images = pdf_to_images(uploaded_file)
@@ -83,10 +88,27 @@ if st.button("Start Redaction") and uploaded_files:
         # Save the redacted images to an in-memory PDF
         pdf_buffer = images_to_pdf(redacted_images)
         
-        # Provide download link for the redacted PDF
+        # Add the individual redacted PDF to the merger
+        merger.append(pdf_buffer)
+        
+        # Option to download each redacted PDF separately
         st.download_button(
-            label=f"Download redacted PDF: {base_name}",
+            label=f"Download redacted PDF: {first_seven_digits}.pdf",
             data=pdf_buffer,
-            file_name=f"{base_name}_redacted.pdf",
+            file_name=f"{first_seven_digits}_redacted.pdf",
             mime="application/pdf"
         )
+
+    # Save all redacted PDFs as one file and provide download link
+    final_output = BytesIO()
+    merger.write(final_output)
+    final_output.seek(0)
+    
+    st.download_button(
+        label="Download all redacted PDFs as a single file",
+        data=final_output,
+        file_name="all_redacted_pdfs.pdf",
+        mime="application/pdf"
+    )
+    
+    merger.close()
