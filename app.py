@@ -1,13 +1,13 @@
 import streamlit as st
 import fitz  # PyMuPDF
-import os
 from PIL import Image, ImageDraw, ImageEnhance
 import numpy as np
-import cv2
+import os
+from io import BytesIO
 
 # Step 1: Extract pages as images
 def pdf_to_images(input_pdf_path, zoom=2.0):
-    doc = fitz.open(input_pdf_path)
+    doc = fitz.open("pdf", input_pdf_path.read())
     images = []
     mat = fitz.Matrix(zoom, zoom)  # Adjust the zoom factor as needed
     for page_num in range(len(doc)):
@@ -60,46 +60,32 @@ def images_to_pdf(images, output_pdf_path, dpi=200):
         dpi=(dpi, dpi)
     )
 
-
-
 # Streamlit interface
-st.set_page_config(page_title="PDF Redactor and Pre-Processor", layout="wide")
-st.title("PDF Redactor and Pre-Processor")
+st.title("Batch PDF Redactor with File Upload")
 
-st.markdown("""
-This tool allows you to redact sensitive information and perform pre-processing (such as grayscaling and contrast enhancement) on PDFs. Simply provide the folder path containing PDF files, and the processed PDFs with redactions and pre-processed images will be saved in the specified output folder
-""")
-
-# Folder upload
-input_folder = st.text_input("Enter the path to the input folder containing PDF files:")
+uploaded_files = st.file_uploader("Upload PDF files", type="pdf", accept_multiple_files=True)
 output_folder = st.text_input("Enter the path to the output folder for saving redacted PDFs:")
 
-if st.button("Start Redaction"):
-
-    if input_folder and output_folder:
-        os.makedirs(output_folder, exist_ok=True)
-        pdf_files = [f for f in os.listdir(input_folder) if f.lower().endswith('.pdf')]
+if st.button("Start Redaction") and uploaded_files and output_folder:
+    os.makedirs(output_folder, exist_ok=True)
+    
+    for uploaded_file in uploaded_files:
+        base_name = os.path.splitext(uploaded_file.name)[0]
+        first_seven_digits = base_name[:7]
+        output_pdf = os.path.join(output_folder, f"{first_seven_digits}.pdf")
         
-        if pdf_files:
-            st.write(f"Found {len(pdf_files)} PDF files in the input folder.")
-            for pdf_file in pdf_files:
-                input_pdf = os.path.join(input_folder, pdf_file)
-                base_name = os.path.basename(pdf_file)
-                first_seven_digits = base_name[:7]
-                output_pdf = os.path.join(output_folder, f"{first_seven_digits}.pdf")
-                
-                # Start processing
-
-                images = pdf_to_images(input_pdf)
-                redacted_images = redact_ids_from_filename(images)
-                images_to_pdf(redacted_images, output_pdf, dpi=200)
-                
-                st.write(f"Redacted and saved: {output_pdf}")
-        else:
-            st.write("No PDF files found in the specified input folder.")
-    else:
-        st.write("Please provide both input and output folder paths.")
+        # Convert PDF to images
+        images = pdf_to_images(uploaded_file)
         
+        # Redact images
+        redacted_images = redact_ids_from_filename(images)
+        
+        # Save the redacted images as a new PDF
+        images_to_pdf(redacted_images, output_pdf, dpi=200)
+        
+        st.write(f"Redacted and saved: {output_pdf}")
+
+
 
 
 
