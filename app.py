@@ -3,11 +3,11 @@ import fitz  # PyMuPDF
 from PIL import Image, ImageDraw, ImageEnhance
 import numpy as np
 from io import BytesIO
-import os
 
 # Step 1: Extract pages as images
-def pdf_to_images(input_pdf_stream, zoom=2.0):
-    doc = fitz.open("pdf", input_pdf_stream)
+def pdf_to_images(uploaded_pdf, zoom=2.0):
+    pdf_bytes = uploaded_pdf.read()  # Read the file content as bytes
+    doc = fitz.open("pdf", pdf_bytes)
     images = []
     mat = fitz.Matrix(zoom, zoom)  # Adjust the zoom factor as needed
     for page_num in range(len(doc)):
