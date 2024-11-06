@@ -67,7 +67,7 @@ def images_to_pdf(images):
     return pdf_buffer
 
 # Streamlit interface
-st.title("Batch PDF Redactor with File Upload")
+st.title("Batch PDF Redactor and Pre-Processor")
 
 uploaded_files = st.file_uploader("Upload PDF files", type="pdf", accept_multiple_files=True)
 
@@ -91,7 +91,7 @@ if st.button("Start Redaction") and uploaded_files:
             pdf_buffer = images_to_pdf(redacted_images)
             
             # Write the redacted PDF into the zip file
-            zip_file.writestr(f"{first_seven_digits}_redacted.pdf", pdf_buffer.read())
+            zip_file.writestr(f"{first_seven_digits}", pdf_buffer.read())
     
     # Provide a download button for the zip file
     zip_buffer.seek(0)
