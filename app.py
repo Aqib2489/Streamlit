@@ -2,12 +2,11 @@ import streamlit as st
 import fitz  # PyMuPDF
 from PIL import Image, ImageDraw, ImageEnhance
 import numpy as np
-import os
 from io import BytesIO
 
 # Step 1: Extract pages as images
-def pdf_to_images(input_pdf_path, zoom=2.0):
-    doc = fitz.open("pdf", input_pdf_path.read())
+def pdf_to_images(input_pdf_stream, zoom=2.0):
+    doc = fitz.open("pdf", input_pdf_stream)
     images = []
     mat = fitz.Matrix(zoom, zoom)  # Adjust the zoom factor as needed
     for page_num in range(len(doc)):
@@ -51,28 +50,27 @@ def redact_ids_from_filename(images):
         redacted_images.append(img)
     return redacted_images
 
-def images_to_pdf(images, output_pdf_path, dpi=200):
+def images_to_pdf(images):
+    pdf_buffer = BytesIO()
     images[0].save(
-        output_pdf_path, 
+        pdf_buffer, 
+        format="PDF", 
         save_all=True, 
         append_images=images[1:], 
         quality=95, 
-        dpi=(dpi, dpi)
+        dpi=(200, 200)
     )
+    pdf_buffer.seek(0)
+    return pdf_buffer
 
 # Streamlit interface
 st.title("Batch PDF Redactor with File Upload")
 
 uploaded_files = st.file_uploader("Upload PDF files", type="pdf", accept_multiple_files=True)
-output_folder = st.text_input("Enter the path to the output folder for saving redacted PDFs:")
 
-if st.button("Start Redaction") and uploaded_files and output_folder:
-    os.makedirs(output_folder, exist_ok=True)
-    
+if st.button("Start Redaction") and uploaded_files:
     for uploaded_file in uploaded_files:
         base_name = os.path.splitext(uploaded_file.name)[0]
-        first_seven_digits = base_name[:7]
-        output_pdf = os.path.join(output_folder, f"{first_seven_digits}.pdf")
         
         # Convert PDF to images
         images = pdf_to_images(uploaded_file)
@@ -80,12 +78,13 @@ if st.button("Start Redaction") and uploaded_files and output_folder:
         # Redact images
         redacted_images = redact_ids_from_filename(images)
         
-        # Save the redacted images as a new PDF
-        images_to_pdf(redacted_images, output_pdf, dpi=200)
+        # Save the redacted images to an in-memory PDF
+        pdf_buffer = images_to_pdf(redacted_images)
         
-        st.write(f"Redacted and saved: {output_pdf}")
-
-
-
-
-
+        # Provide download link for the redacted PDF
+        st.download_button(
+            label=f"Download redacted PDF: {base_name}",
+            data=pdf_buffer,
+            file_name=f"{base_name}_redacted.pdf",
+            mime="application/pdf"
+        )
