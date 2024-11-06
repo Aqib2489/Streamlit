@@ -73,32 +73,26 @@ if st.button("Start Redaction") and input_folder and output_folder:
     if pdf_files:
         st.write(f"Found {len(pdf_files)} PDF files in the input folder.")
         
-        # Initialize progress bar
-        progress_bar = st.progress(0)
+        # Progress bar
+        progress_bar = st.progress(0)  # Initial progress bar
+        total_files = len(pdf_files)
         
-        # Initialize progress display
-        progress_text = st.empty()
-        
-        # Process each PDF and update progress
-        for idx, pdf_file in enumerate(pdf_files, 1):
+        for i, pdf_file in enumerate(pdf_files):
             input_pdf = os.path.join(input_folder, pdf_file)
             base_name = os.path.basename(pdf_file)
             first_seven_digits = base_name[:7]
             output_pdf = os.path.join(output_folder, f"{first_seven_digits}.pdf")
             
-            # Process the PDF
             images = pdf_to_images(input_pdf)
             redacted_images = redact_ids_from_filename(images)
             images_to_pdf(redacted_images, output_pdf, dpi=200)
             
-            # Update progress bar and text
-            progress_bar.progress(idx / len(pdf_files))
-            progress_text.text(f"Processing PDF: {idx}/{len(pdf_files)}")
+            # Update progress
+            progress_bar.progress((i + 1) / total_files)
             
-            st.write(f"Redacted and saved: {output_pdf}")
-        
-        # After all PDFs are processed, notify the user
+            # Show current progress text
+            st.write(f"Processed {i + 1}/{total_files} PDFs: {output_pdf}")
+            
         st.write("All PDFs have been processed.")
-        
     else:
         st.write("No PDF files found in the specified input folder.")
